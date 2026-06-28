@@ -3,6 +3,7 @@ import { Music2, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type Props = {
+  id: string;
   title: string;
   songs: number;
   members: number;
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export default function ProjectCard({
+  id,
   title,
   songs,
   members,
@@ -23,20 +25,15 @@ export default function ProjectCard({
 
   return (
     <motion.div
-      onClick={() => navigate("/project/1")}
+      onClick={() => navigate(`/project/${id}`)}
       initial={{ opacity: 0, y: 25 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
         delay: index * 0.08,
         duration: 0.45,
       }}
-      whileHover={{
-        y: -6,
-        scale: 1.01,
-      }}
-      whileTap={{
-        scale: 0.99,
-      }}
+      whileHover={{ y: -6, scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
       className="cursor-pointer overflow-hidden rounded-[30px] border border-white/10 bg-[#13171F] shadow-xl"
     >
       <div className={`relative h-48 bg-gradient-to-br ${colors}`}>
