@@ -4,13 +4,27 @@ import { motion } from "framer-motion";
 
 import ProjectCard from "../components/project/ProjectCard";
 import CreateProjectSheet from "../components/CreateProjectSheet";
+
 import { useProjects } from "../hooks/useProjects";
 
-export default function ProjectsPage() {
-  const { projects, addProject, loading } = useProjects();
+import {
+  deleteProject,
+  type Project,
+} from "../services/projectService";
 
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [projectName, setProjectName] = useState("");
+export default function ProjectsPage() {
+  const {
+    projects,
+    addProject,
+    loading,
+    refresh,
+  } = useProjects();
+
+  const [sheetOpen, setSheetOpen] =
+    useState(false);
+
+  const [projectName, setProjectName] =
+    useState("");
 
   async function create() {
     if (!projectName.trim()) return;
@@ -20,20 +34,42 @@ export default function ProjectsPage() {
 
       setProjectName("");
       setSheetOpen(false);
-    } 
-    catch (err: any) {
-  console.error(err);
+    } catch (err: any) {
+      console.error(err);
 
-  alert(
-    err?.message ??
-    JSON.stringify(err, null, 2) ??
-    "Unknown error"
-  );
-}}
+      alert(
+        err?.message ??
+          JSON.stringify(err, null, 2) ??
+          "Unknown error"
+      );
+    }
+  }
+
+  async function handleDelete(
+    project: Project
+  ) {
+    const confirmed = window.confirm(
+      `Delete "${project.name}"?\n\nThis will permanently delete the project, artwork and all songs.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteProject(project);
+
+      await refresh();
+    } catch (err) {
+      console.error(err);
+
+      alert("Failed to delete project.");
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#08090D] px-6 pt-16 pb-36">
-      <p className="text-zinc-500">Good afternoon</p>
+      <p className="text-zinc-500">
+        Good afternoon
+      </p>
 
       <h1 className="mt-1 text-5xl font-black text-white">
         Sam 👋
@@ -44,7 +80,9 @@ export default function ProjectsPage() {
       </h2>
 
       {loading ? (
-        <p className="text-zinc-500">Loading...</p>
+        <p className="text-zinc-500">
+          Loading...
+        </p>
       ) : projects.length === 0 ? (
         <div className="mt-24 text-center">
           <h3 className="text-2xl font-bold text-white">
@@ -52,7 +90,8 @@ export default function ProjectsPage() {
           </h3>
 
           <p className="mt-3 text-zinc-500">
-            Click the + button to create your first project.
+            Click the + button to create your first
+            project.
           </p>
         </div>
       ) : (
@@ -62,11 +101,14 @@ export default function ProjectsPage() {
               key={project.id}
               id={project.id}
               title={project.name}
-              songs={0}
-              members={1}
+              songs={project.songs?.[0]?.count ?? 0}              members={1}
               updated="Just now"
               colors="from-sky-500 via-blue-600 to-indigo-700"
+              coverPath={project.cover_path}
               index={index}
+              onDelete={() =>
+                handleDelete(project)
+              }
             />
           ))}
         </div>
@@ -79,7 +121,10 @@ export default function ProjectsPage() {
           onClick={() => setSheetOpen(true)}
           className="fixed bottom-10 right-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-500 shadow-[0_0_40px_rgba(59,130,246,.45)]"
         >
-          <Plus className="text-white" size={30} />
+          <Plus
+            className="text-white"
+            size={30}
+          />
         </motion.button>
       )}
 

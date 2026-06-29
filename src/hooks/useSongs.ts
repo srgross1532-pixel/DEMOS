@@ -6,23 +6,26 @@ export function useSongs(projectId: string) {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await getSongs(projectId);
-setSongs(data ?? []);
-      } finally {
-        setLoading(false);
-      }
-    }
+  async function refresh() {
+    if (!projectId) return;
 
-    if (projectId) {
-      load();
+    setLoading(true);
+
+    try {
+      const data = await getSongs(projectId);
+      setSongs(data ?? []);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
+    refresh();
   }, [projectId]);
 
   return {
     songs,
     loading,
+    refresh,
   };
 }

@@ -1,9 +1,57 @@
-import { Lock, User } from "lucide-react";
+import { useState } from "react";
+import { Lock, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
+import { supabase } from "../lib/supabase";
+
 export default function LoginCard() {
   const navigate = useNavigate();
+
+  const [isRegister, setIsRegister] = useState(false);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+
+  const [error, setError] = useState("");
+
+  async function handleSubmit() {
+    setLoading(true);
+    setError("");
+
+    try {
+      if (isRegister) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        alert(
+          "Account created!\n\nYou can now sign in."
+        );
+
+        setIsRegister(false);
+      } else {
+        const { error } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+        if (error) throw error;
+
+        navigate("/projects");
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <motion.div
@@ -13,21 +61,30 @@ export default function LoginCard() {
     >
       <div className="mb-8 text-center">
         <h2 className="text-3xl font-bold text-white">
-          Welcome back
+          {isRegister
+            ? "Create Account"
+            : "Welcome Back"}
         </h2>
 
         <p className="mt-2 text-zinc-400">
-          Sign in to access your projects
+          {isRegister
+            ? "Create your DEMOS account"
+            : "Sign in to access your projects"}
         </p>
       </div>
 
       <div className="space-y-5">
 
         <div className="flex items-center rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-          <User className="mr-3 h-5 w-5 text-blue-400" />
+          <Mail className="mr-3 h-5 w-5 text-blue-400" />
 
           <input
-            placeholder="Username"
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
             className="w-full bg-transparent text-white outline-none placeholder:text-zinc-500"
           />
         </div>
@@ -38,18 +95,44 @@ export default function LoginCard() {
           <input
             type="password"
             placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
             className="w-full bg-transparent text-white outline-none placeholder:text-zinc-500"
           />
         </div>
 
+        {error && (
+          <p className="text-sm text-red-400">
+            {error}
+          </p>
+        )}
+
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
-          onClick={() => navigate("/projects")}
+          disabled={loading}
+          onClick={handleSubmit}
           className="mt-2 w-full rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-400 py-4 text-lg font-semibold text-white shadow-[0_0_30px_rgba(59,130,246,.45)]"
         >
-          Sign In
+          {loading
+            ? "Please wait..."
+            : isRegister
+            ? "Create Account"
+            : "Sign In"}
         </motion.button>
+
+        <button
+          onClick={() =>
+            setIsRegister(!isRegister)
+          }
+          className="w-full text-center text-sm text-zinc-400 hover:text-white"
+        >
+          {isRegister
+            ? "Already have an account? Sign In"
+            : "Don't have an account? Create one"}
+        </button>
 
       </div>
     </motion.div>

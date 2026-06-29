@@ -1,141 +1,148 @@
 import { useRef } from "react";
-import { useParams } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
+import { useParams } from "react-router-dom";
 
+import ProjectHeader from "../components/project/ProjectHeader";
+import SongList from "../components/project/SongList";
+
+import { useProject } from "../hooks/useProject";
 import { useSongs } from "../hooks/useSongs";
+import { supabase } from "../lib/supabase";
+
+import {
+  uploadProjectCover,
+} from "../services/projectService";
+
 import { uploadSong } from "../services/songService";
 import { formatSongTitle } from "../utils/formatSongTitle";
 
 export default function ProjectPage() {
   const { id } = useParams();
 
-  const { songs, loading } = useSongs(id ?? "");
+  const {
+    project,
+    loading: projectLoading,
+    refresh: refreshProject,
+  } = useProject(id ?? "");
+
+  const {
+    songs,
+    loading: songsLoading,
+    refresh,
+  } = useSongs(id ?? "");
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function chooseFile(
-    event: React.ChangeEvent<HTMLInputElement>
+  async function handleFileChange(
+    e: React.ChangeEvent<HTMLInputElement>
   ) {
-    const file = event.target.files?.[0];
+    const file = e.target.files?.[0];
 
     if (!file || !id) return;
+
+    const MAX_SIZE = 50 * 1024 * 1024;
+
+    if (file.size > MAX_SIZE) {
+      alert(
+        "This file is larger than the current 50 MB upload limit.\n\n" +
+          "For now, DEMOS supports audio files up to 50 MB."
+      );
+
+      e.target.value = "";
+      return;
+    }
 
     try {
       const title = formatSongTitle(file.name);
 
       await uploadSong(id, file, title);
 
-      window.location.reload();
-    } catch (err) {
+      await refresh();
+
+      e.target.value = "";
+    } catch (err: any) {
       console.error(err);
-      alert("Upload failed.");
+
+      alert(
+        err?.message ??
+          JSON.stringify(err, null, 2) ??
+          "Unknown upload error"
+      );
     }
   }
 
+  async function handleCoverSelected(file: File) {
+   const {
+  data: { session },
+} = await supabase.auth.getSession();
+
+console.log("SESSION:", session);
+    console.log("Project ID:", id);
+  if (!id) return;
+
+  console.log("Uploading cover...");
+  console.log(file);
+
+  try {
+    await uploadProjectCover(id, file);
+
+    console.log("Upload finished");
+
+    await refreshProject();
+
+    console.log("Project refreshed");
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+  if (projectLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#08090D]">
+        <p className="text-zinc-400">
+          Loading project...
+        </p>
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-[#08090D]">
+    <main className="min-h-screen bg-[#08090D] pb-32">
 
-      <div className="relative h-72 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700">
+      <ProjectHeader
+        project={project}
+        songCount={songs.length}
+        onCoverSelected={handleCoverSelected}
+      />
 
-        <Link
-          to="/projects"
-          className="absolute left-6 top-14 rounded-full bg-black/20 p-3 backdrop-blur-xl"
-        >
-          <ArrowLeft className="text-white" />
-        </Link>
-
-        <div className="absolute bottom-8 left-8">
-
-          <h1 className="text-5xl font-black text-white">
-            Project
-          </h1>
-
-          <p className="mt-2 text-white/80">
-            {songs.length} Songs
-          </p>
-
-        </div>
-
-      </div>
-
-      <div className="px-6 py-8">
-
-        {loading ? (
-
-          <p className="text-zinc-400">
-            Loading...
-          </p>
-
-        ) : songs.length === 0 ? (
-
-          <div className="mt-16 text-center">
-
-            <h2 className="text-2xl font-bold text-white">
-              No Songs Yet
-            </h2>
-
-            <p className="mt-3 text-zinc-500">
-              Tap + to upload your first demo.
-            </p>
-
-          </div>
-
-        ) : (
-
-          <div className="space-y-2">
-
-            {songs.map((song, index) => (
-
-              <motion.div
-                key={song.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * .04 }}
-                className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/5 bg-[#141821] p-5 transition hover:bg-[#1A202B]"
-              >
-
-                <div>
-
-                  <h3 className="text-lg font-semibold text-white">
-                    {song.title}
-                  </h3>
-
-                  <p className="text-sm text-zinc-500">
-                    Demo
-                  </p>
-
-                </div>
-
-                <div className="text-blue-400">
-                  ▶
-                </div>
-
-              </motion.div>
-
-            ))}
-
-          </div>
-
-        )}
-
+      <div className="px-6 pt-8">
+        <SongList
+          songs={songs}
+          loading={songsLoading}
+          onRefresh={refresh}
+        />
       </div>
 
       <input
         ref={inputRef}
         type="file"
-        accept=".mp3,.wav,.m4a,.aac"
+        accept=".wav,.mp3,.m4a,.aac"
         hidden
-        onChange={chooseFile}
+        onChange={handleFileChange}
       />
 
-      <button
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        whileHover={{ scale: 1.05 }}
         onClick={() => inputRef.current?.click()}
-        className="fixed bottom-10 right-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-500 shadow-[0_0_40px_rgba(59,130,246,.45)]"
+        className="fixed bottom-10 right-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 shadow-[0_0_40px_rgba(59,130,246,.45)]"
       >
-        <Plus className="text-white" />
-      </button>
+        <Plus
+          className="text-white"
+          size={30}
+        />
+      </motion.button>
 
     </main>
   );
