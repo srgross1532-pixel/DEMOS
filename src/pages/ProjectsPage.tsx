@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
-
+import { formatRelativeDate } from "../utils/formatRelativeDate";
 import ProjectCard from "../components/project/ProjectCard";
 import CreateProjectSheet from "../components/CreateProjectSheet";
 
@@ -102,8 +102,7 @@ export default function ProjectsPage() {
               id={project.id}
               title={project.name}
               songs={project.songs?.[0]?.count ?? 0}              members={1}
-              updated="Just now"
-              colors="from-sky-500 via-blue-600 to-indigo-700"
+              updated={formatRelativeDate(project.created_at)}              colors="from-sky-500 via-blue-600 to-indigo-700"
               coverPath={project.cover_path}
               index={index}
               onDelete={() =>

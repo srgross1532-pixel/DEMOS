@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { v4 as uuid } from "uuid";
 
 export type Song = {
   id: string;
@@ -29,8 +30,7 @@ export async function uploadSong(
   title: string
 ) {
   const extension = file.name.split(".").pop();
-  const fileName = crypto.randomUUID() + "." + extension;
-  const path = `${projectId}/${fileName}`;
+  const fileName = `${uuid()}.${extension}`;  const path = `${projectId}/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from("songs")
