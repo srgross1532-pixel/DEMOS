@@ -1,23 +1,26 @@
 import {
   GripVertical,
-  Trash2,
+  MoreVertical,
+  Pause,
+  Play,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import type {
+  DraggableAttributes,
+  DraggableSyntheticListeners,
+} from "@dnd-kit/core";
 
 import { useAudio } from "../../context/AudioContext";
-import {
-  deleteSong,
-  type Song,
-} from "../../services/songService";
+import type { Song } from "../../services/songService";
 
 type Props = {
   song: Song;
   songs: Song[];
   index: number;
-  onDeleted: () => Promise<void>;
+  onOpenOptions: (song: Song) => void;
 
-  dragListeners?: any;
-  dragAttributes?: any;
+  dragListeners?: DraggableSyntheticListeners;
+  dragAttributes?: DraggableAttributes;
 };
 
 function formatUploadDate(date: string) {
@@ -52,36 +55,18 @@ export default function SongCard({
   song,
   songs,
   index,
-  onDeleted,
+  onOpenOptions,
   dragListeners,
   dragAttributes,
-}: Props) {
+}: Props)
+{
   const {
     playQueue,
     currentSong,
     playing,
   } = useAudio();
 
-  async function handleDelete(
-    e: React.MouseEvent
-  ) {
-    e.stopPropagation();
 
-    if (
-      !window.confirm(
-        `Delete "${song.title}"?\n\nThis cannot be undone.`
-      )
-    )
-      return;
-
-    try {
-      await deleteSong(song);
-      await onDeleted();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete song.");
-    }
-  }
 
   return (
     <motion.div
@@ -92,23 +77,23 @@ export default function SongCard({
       }}
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.98 }}
-      onClick={() =>
-        playQueue(songs, index)
-      }
-      className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/5 bg-[#141821] p-5 transition-colors hover:bg-[#1A202B]"
+      className="flex min-h-24 items-center justify-between rounded-lg border border-white/10 bg-[#141821] p-4 transition-colors hover:bg-[#1A202B] sm:p-5"
     >
-      <div className="flex items-center gap-4">
-
+      <div
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-4"
+        onClick={() => playQueue(songs, index)}
+      >
         <button
-  {...dragListeners}
-  {...dragAttributes}
-  className="cursor-grab touch-none text-zinc-500 active:cursor-grabbing"
->
-  <GripVertical size={18} />
-</button>
+          {...dragListeners}
+          {...dragAttributes}
+          className="cursor-grab touch-none rounded-md p-1 text-zinc-500 transition hover:bg-white/5 hover:text-zinc-300 active:cursor-grabbing"
+          aria-label={`Reorder ${song.title}`}
+        >
+          <GripVertical size={18} />
+        </button>
 
-        <div>
-          <h2 className="text-xl font-semibold text-white">
+        <div className="min-w-0">
+          <h2 className="truncate text-lg font-semibold text-white sm:text-xl">
             {song.title}
           </h2>
 
@@ -124,18 +109,34 @@ export default function SongCard({
       <div className="flex items-center gap-5">
 
         <button
-          onClick={handleDelete}
-          className="text-zinc-500 transition hover:text-red-500"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenOptions(song);
+          }}
+          className="rounded-full p-2 text-zinc-500 transition hover:bg-white/5 hover:text-white"
+          aria-label={`More options for ${song.title}`}
         >
-          <Trash2 size={20} />
+          <MoreVertical size={20} />
         </button>
 
-        <div className="text-2xl text-blue-400">
-          {playing &&
-          currentSong?.id === song.id
-            ? "⏸"
-            : "▶"}
-        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            playQueue(songs, index);
+          }}
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-500 text-white shadow-[0_0_24px_rgba(59,130,246,.35)] transition hover:scale-105"
+          aria-label={
+            playing && currentSong?.id === song.id
+              ? `Pause ${song.title}`
+              : `Play ${song.title}`
+          }
+        >
+          {playing && currentSong?.id === song.id ? (
+            <Pause size={18} />
+          ) : (
+            <Play size={18} className="ml-0.5" />
+          )}
+        </button>
 
       </div>
 

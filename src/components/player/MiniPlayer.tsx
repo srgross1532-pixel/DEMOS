@@ -5,7 +5,9 @@ import {
   SkipForward,
 } from "lucide-react";
 import { motion } from "framer-motion";
+
 import { useAudio } from "../../context/AudioContext";
+import { useProjectCover } from "../../hooks/useProjectCover";
 
 function formatTime(seconds: number) {
   if (!seconds || Number.isNaN(seconds)) return "0:00";
@@ -28,6 +30,10 @@ export default function MiniPlayer() {
     openPlayer,
   } = useAudio();
 
+  const { coverUrl } = useProjectCover(
+    currentSong?.project_id
+  );
+
   if (!currentSong) return null;
 
   const progress =
@@ -45,59 +51,78 @@ export default function MiniPlayer() {
 
         <div className="flex items-center justify-between">
 
-          <div>
-            <h3 className="font-semibold text-white">
-              {currentSong.title}
-            </h3>
+          <div className="flex items-center gap-4">
 
-            <p className="text-sm text-zinc-400">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </p>
+            <motion.div
+              layoutId="album-art"
+              className="h-14 w-14 overflow-hidden rounded-2xl shadow-lg"
+            >
+              {coverUrl ? (
+                <img
+                  src={coverUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full bg-gradient-to-br from-blue-500 to-cyan-400" />
+              )}
+            </motion.div>
+
+            <div>
+              <h3 className="font-semibold text-white">
+                {currentSong.title}
+              </h3>
+
+              <p className="text-sm text-zinc-400">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </p>
+            </div>
+
           </div>
 
           <div className="flex items-center gap-3">
 
-  <button
-    onClick={async (e) => {
-      e.stopPropagation();
-      await previous();
-    }}
-    className="text-white transition hover:scale-110"
-  >
-    <SkipBack size={22} />
-  </button>
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                await previous();
+              }}
+              className="text-white transition hover:scale-110"
+            >
+              <SkipBack size={22} />
+            </button>
 
-  <button
-    onClick={async (e) => {
-      e.stopPropagation();
-      await playPause();
-    }}
-    className="rounded-full bg-blue-500 p-3"
-  >
-    {playing ? (
-      <Pause
-        className="text-white"
-        size={20}
-      />
-    ) : (
-      <Play
-        className="text-white"
-        size={20}
-      />
-    )}
-  </button>
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                await playPause();
+              }}
+              className="rounded-full bg-blue-500 p-3"
+            >
+              {playing ? (
+                <Pause
+                  className="text-white"
+                  size={20}
+                />
+              ) : (
+                <Play
+                  className="text-white"
+                  size={20}
+                />
+              )}
+            </button>
 
-  <button
-    onClick={async (e) => {
-      e.stopPropagation();
-      await next();
-    }}
-    className="text-white transition hover:scale-110"
-  >
-    <SkipForward size={22} />
-  </button>
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                await next();
+              }}
+              className="text-white transition hover:scale-110"
+            >
+              <SkipForward size={22} />
+            </button>
 
-</div>
+          </div>
 
         </div>
 

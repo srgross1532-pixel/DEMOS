@@ -3,7 +3,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import type { ReactNode } from "react";
@@ -53,7 +52,7 @@ export function AudioProvider({
 }: {
   children: ReactNode;
 }) {
-  const audioRef = useRef(new Audio());
+  const audio = useMemo(() => new Audio(), []);
 
   const [queue, setQueue] = useState<Song[]>([]);
 
@@ -83,8 +82,6 @@ export function AudioProvider({
     useState(false);
 
   useEffect(() => {
-    const audio = audioRef.current;
-
     const updateTime = () =>
       setCurrentTime(audio.currentTime);
 
@@ -112,10 +109,8 @@ export function AudioProvider({
         updateDuration
       );
     };
-  }, []);
+  }, [audio]);
 useEffect(() => {
-  const audio = audioRef.current;
-
   async function handleEnded() {
     if (currentIndex < queue.length - 1) {
       const nextIndex = currentIndex + 1;
@@ -145,17 +140,16 @@ useEffect(() => {
   return () => {
     audio.removeEventListener("ended", handleEnded);
   };
-}, [currentIndex, queue]); 
+}, [audio, currentIndex, queue]);
 
   async function playSong(song: Song) {
     if (!song.audio_path) return;
 
     const url = await getSongUrl(song.audio_path);
 
-    const audio = audioRef.current;
-
     audio.pause();
 
+    // eslint-disable-next-line react-hooks/immutability
     audio.src = url;
 
     await audio.play();
@@ -177,8 +171,6 @@ useEffect(() => {
   }
 
   async function playPause() {
-    const audio = audioRef.current;
-
     if (!currentSong) return;
 
     if (playing) {
@@ -217,13 +209,14 @@ useEffect(() => {
   }
 
   function pause() {
-    audioRef.current.pause();
+    audio.pause();
 
     setPlaying(false);
   }
 
   function seek(time: number) {
-    audioRef.current.currentTime = time;
+    // eslint-disable-next-line react-hooks/immutability
+    audio.currentTime = time;
 
     setCurrentTime(time);
   }
@@ -239,7 +232,7 @@ useEffect(() => {
   return (
     <AudioContext.Provider
       value={{
-        audio: audioRef.current,
+        audio,
 
         queue,
         currentIndex,
@@ -267,6 +260,7 @@ useEffect(() => {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAudio() {
   const context =
     useContext(AudioContext);

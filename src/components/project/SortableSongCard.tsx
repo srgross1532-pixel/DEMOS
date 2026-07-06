@@ -8,14 +8,14 @@ type Props = {
   song: Song;
   songs: Song[];
   index: number;
-  onDeleted: () => Promise<void>;
+  onOpenOptions: (song: Song) => void;
 };
 
 export default function SortableSongCard({
   song,
   songs,
   index,
-  onDeleted,
+  onOpenOptions,
 }: Props) {
   const {
     attributes,
@@ -41,7 +41,7 @@ export default function SortableSongCard({
         song={song}
         songs={songs}
         index={index}
-        onDeleted={onDeleted}
+        onOpenOptions={onOpenOptions}
         dragListeners={listeners}
         dragAttributes={attributes}
       />

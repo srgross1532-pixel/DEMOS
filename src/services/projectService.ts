@@ -10,39 +10,81 @@ export type Project = {
   songs?: {
     count: number;
   }[];
+
+  project_members?: {
+    count: number;
+  }[];
 };
 
-
-export async function getProjects() {
-  const { data, error } = await supabase
-    .from("projects")
-    .select(`
-  *,
-  songs(count)
-`)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-
-  return data as Project[];
-}
-
-export async function createProject(name: string) {
-  const invite = Math.random()
+function makeInviteCode() {
+  return Math.random()
     .toString(36)
     .substring(2, 8)
     .toUpperCase();
+}
+
+async function getCurrentUserId() {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error) throw error;
+
+  if (!user) {
+    throw new Error("You need to sign in first.");
+  }
+
+  return user.id;
+}
+
+export async function getProjects() {
+  const userId = await getCurrentUserId();
+
+  const { data, error } = await supabase
+    .from("project_members")
+    .select(`
+      project:projects!inner(
+        *,
+        songs(count)
+      )
+    `)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+
+  return (data ?? [])
+    .map((row) => row.project as unknown as Project)
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() -
+        new Date(a.created_at).getTime()
+    );
+}
+
+export async function createProject(name: string) {
+  const userId = await getCurrentUserId();
 
   const { data, error } = await supabase
     .from("projects")
     .insert({
       name,
-      invite_code: invite,
+      invite_code: makeInviteCode(),
     })
     .select()
     .single();
 
   if (error) throw error;
+
+  const { error: memberError } = await supabase
+    .from("project_members")
+    .insert({
+      project_id: data.id,
+      user_id: userId,
+      role: "owner",
+    });
+
+  if (memberError) throw memberError;
 
   return data as Project;
 }
@@ -124,23 +166,72 @@ export async function deleteProject(
     .from("songs")
     .delete()
     .eq("project_id", project.id);
-console.log("Deleting project:", project);
 
-const { data: existing } = await supabase
-  .from("projects")
-  .select("*")
-  .eq("id", project.id);
+  const { error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", project.id);
 
-console.log("Existing project:", existing);
+  if (error) throw error;
+}
 
-const { data, error } = await supabase
-  .from("projects")
-  .delete()
-  .eq("id", project.id)
-  .select();
+export async function renameProject(
+  projectId: string,
+  name: string
+) {
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      name,
+    })
+    .eq("id", projectId);
 
-console.log("DELETE DATA:", data);
-console.log("DELETE ERROR:", error);
+  if (error) throw error;
+}
 
-if (error) throw error;
+export async function generateProjectInviteCode(
+  projectId: string
+) {
+  const code = makeInviteCode();
+
+  const { data, error } = await supabase
+    .from("projects")
+    .update({
+      invite_code: code,
+    })
+    .eq("id", projectId)
+    .select("invite_code")
+    .single();
+
+  if (error) throw error;
+
+  return data.invite_code as string;
+}
+
+export async function joinProjectByInviteCode(
+  code: string
+) {
+  const normalized = code
+    .trim()
+    .replace(/\s+/g, "")
+    .toUpperCase();
+
+  if (!normalized) {
+    throw new Error("Enter an invite code.");
+  }
+
+  const { data, error } = await supabase.rpc(
+    "join_project_with_invite",
+    {
+      join_code: normalized,
+    }
+  );
+
+  if (error) throw error;
+
+  if (!data) {
+    throw new Error("Invite code not found.");
+  }
+
+  return getProject(data as string);
 }

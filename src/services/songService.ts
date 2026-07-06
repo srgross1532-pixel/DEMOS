@@ -103,3 +103,29 @@ export async function getSongUrl(audioPath: string) {
 
   return data.signedUrl;
 }
+export async function renameSong(
+  songId: string,
+  title: string
+) {
+  const { error } = await supabase
+    .from("songs")
+    .update({
+      title,
+    })
+    .eq("id", songId);
+
+  if (error) throw error;
+}
+export async function moveSong(
+  songId: string,
+  projectId: string
+) {
+  const { error } = await supabase
+    .from("songs")
+    .update({
+      project_id: projectId,
+    })
+    .eq("id", songId);
+
+  if (error) throw error;
+}

@@ -46,8 +46,12 @@ export default function LoginCard() {
 
         navigate("/projects");
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong."
+      );
     } finally {
       setLoading(false);
     }
@@ -57,25 +61,25 @@ export default function LoginCard() {
     <motion.div
       whileHover={{ y: -4 }}
       transition={{ duration: 0.25 }}
-      className="w-[420px] rounded-[32px] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-3xl"
+      className="w-full max-w-[420px] rounded-lg border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-3xl sm:p-8"
     >
       <div className="mb-8 text-center">
         <h2 className="text-3xl font-bold text-white">
           {isRegister
-            ? "Create Account"
-            : "Welcome Back"}
+            ? "Create account"
+            : "Welcome back"}
         </h2>
 
         <p className="mt-2 text-zinc-400">
           {isRegister
             ? "Create your DEMOS account"
-            : "Sign in to access your projects"}
+            : "Sign in to your band projects"}
         </p>
       </div>
 
       <div className="space-y-5">
 
-        <div className="flex items-center rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+        <div className="flex items-center rounded-lg border border-white/10 bg-white/5 px-4 py-4">
           <Mail className="mr-3 h-5 w-5 text-blue-400" />
 
           <input
@@ -89,7 +93,7 @@ export default function LoginCard() {
           />
         </div>
 
-        <div className="flex items-center rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+        <div className="flex items-center rounded-lg border border-white/10 bg-white/5 px-4 py-4">
           <Lock className="mr-3 h-5 w-5 text-blue-400" />
 
           <input
@@ -114,7 +118,7 @@ export default function LoginCard() {
           whileTap={{ scale: 0.97 }}
           disabled={loading}
           onClick={handleSubmit}
-          className="mt-2 w-full rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-400 py-4 text-lg font-semibold text-white shadow-[0_0_30px_rgba(59,130,246,.45)]"
+          className="mt-2 w-full rounded-lg bg-blue-500 py-4 text-lg font-semibold text-white shadow-[0_0_30px_rgba(59,130,246,.45)] transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading
             ? "Please wait..."

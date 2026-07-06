@@ -27,7 +27,7 @@ export default function App() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      console.log("Restored session:", session);
+
       setLoggedIn(!!session);
       setLoading(false);
     }

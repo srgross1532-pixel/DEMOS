@@ -4,17 +4,19 @@ import { useAudio } from "../context/AudioContext";
 type Props = {
   open: boolean;
   value: string;
+  loading: boolean;
   onChange: (value: string) => void;
   onClose: () => void;
-  onCreate: () => void;
+  onJoin: () => void;
 };
 
-export default function CreateProjectSheet({
+export default function JoinProjectSheet({
   open,
   value,
+  loading,
   onChange,
   onClose,
-  onCreate,
+  onJoin,
 }: Props) {
   const { currentSong } = useAudio();
 
@@ -54,31 +56,37 @@ export default function CreateProjectSheet({
             <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-zinc-600" />
 
             <h2 className="text-center text-2xl font-bold text-white">
-              New Project
+              Join Project
             </h2>
+
+            <p className="mx-auto mt-3 max-w-sm text-center text-zinc-400">
+              Enter the invite code from a bandmate to add their project to your workspace.
+            </p>
 
             <input
               autoFocus
               value={value}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder="Project name..."
-              className="mt-8 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-lg text-white outline-none placeholder:text-zinc-500"
+              onChange={(e) =>
+                onChange(e.target.value.toUpperCase())
+              }
+              placeholder="Invite code"
+              className="mt-8 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center text-xl font-bold tracking-[0.18em] text-white outline-none placeholder:text-zinc-500"
             />
 
             <div className="mt-8 flex gap-4">
               <button
                 onClick={onClose}
-                className="flex-1 rounded-2xl bg-white/5 py-4 text-white transition duration-200 hover:bg-white/10 hover:scale-[1.02] active:scale-[0.98]"
+                className="flex-1 rounded-2xl bg-white/5 py-4 text-white transition duration-200 hover:scale-[1.02] hover:bg-white/10 active:scale-[0.98]"
               >
                 Cancel
               </button>
 
               <button
-                onClick={onCreate}
-                disabled={!value.trim()}
-                className="flex-1 rounded-2xl bg-blue-500 py-4 font-semibold text-white transition duration-200 hover:bg-blue-600 hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={onJoin}
+                disabled={!value.trim() || loading}
+                className="flex-1 rounded-2xl bg-blue-500 py-4 font-semibold text-white transition duration-200 hover:scale-[1.02] hover:bg-blue-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Create
+                {loading ? "Joining..." : "Join"}
               </button>
             </div>
           </motion.div>
