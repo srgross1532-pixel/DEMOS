@@ -226,7 +226,6 @@ export async function exportSong(
   if (!song.audio_path) {
     throw new Error("Song has no audio file.");
   }
-console.log("Current user:", user);
   const { data, error } = await supabase.storage
     .from("songs")
     .createSignedUrl(
@@ -239,6 +238,5 @@ if (error) {
   throw error;
 }
 
-console.log("Inserted song:", data);
   window.open(data.signedUrl, "_blank");
 }
