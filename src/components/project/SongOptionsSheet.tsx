@@ -11,6 +11,7 @@ type Props = {
   onRename: () => void;
   onMove: () => void;
   onDelete: () => void;
+  onExport: () => void;
 };
 
 export default function SongOptionsSheet({
@@ -20,6 +21,7 @@ export default function SongOptionsSheet({
   onRename,
   onMove,
   onDelete,
+  onExport,
 }: Props) {
   const { currentSong } = useAudio();
   return (
@@ -76,6 +78,13 @@ export default function SongOptionsSheet({
                 Move to Project
               </button>
 
+              <button
+                onClick={onExport}
+                className="w-full rounded-2xl bg-white/5 px-4 py-4 text-left text-lg text-white transition hover:bg-white/10 hover:scale-[1.02] active:scale-[0.98]"
+
+                >
+  Download
+</button>
               <button
                 onClick={onDelete}
                 className="w-full rounded-2xl bg-red-500/10 px-4 py-4 text-left text-lg text-red-400 transition hover:bg-red-500/20 hover:scale-[1.02] active:scale-[0.98]"

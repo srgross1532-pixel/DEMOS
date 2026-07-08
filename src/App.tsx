@@ -7,29 +7,39 @@ import {
 } from "react-router-dom";
 
 import { supabase } from "./lib/supabase";
-
+import { getMyProfile } from "./services/profileService";
 import { AudioProvider } from "./context/AudioContext";
 
 import LoginPage from "./pages/LoginPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectPage from "./pages/ProjectPage";
 import SongPage from "./pages/SongPage";
-
+import UsernamePage from "./pages/UsernamePage";
 import MiniPlayer from "./components/player/MiniPlayer";
 import ExpandedPlayer from "./components/player/ExpandedPlayer";
 
 export default function App() {
   const [loading, setLoading] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(false);
+const [loggedIn, setLoggedIn] = useState(false);
+const [hasProfile, setHasProfile] =
+  useState(false);
 
   useEffect(() => {
     async function checkSession() {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
+  data: { session },
+} = await supabase.auth.getSession();
 
-      setLoggedIn(!!session);
-      setLoading(false);
+setLoggedIn(!!session);
+
+if (session) {
+  const profile =
+    await getMyProfile();
+
+  setHasProfile(!!profile);
+}
+
+setLoading(false);
     }
 
     checkSession();
@@ -37,10 +47,19 @@ export default function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setLoggedIn(!!session);
-      }
-    );
+  async (_event, session) => {
+    setLoggedIn(!!session);
+
+    if (session) {
+      const profile =
+        await getMyProfile();
+
+      setHasProfile(!!profile);
+    } else {
+      setHasProfile(false);
+    }
+  }
+);
 
     return () => subscription.unsubscribe();
   }, []);
@@ -65,15 +84,38 @@ export default function App() {
             element={
               loggedIn ? (
                 <Navigate
-                  to="/projects"
-                  replace
-                />
+  to={
+    hasProfile
+      ? "/projects"
+      : "/username"
+  }
+  replace
+/>
               ) : (
                 <LoginPage />
               )
             }
           />
-
+<Route
+  path="/username"
+  element={
+    loggedIn ? (
+      hasProfile ? (
+        <Navigate
+          to="/projects"
+          replace
+        />
+      ) : (
+        <UsernamePage />
+      )
+    ) : (
+      <Navigate
+        to="/"
+        replace
+      />
+    )
+  }
+/>
           <Route
             path="/projects"
             element={

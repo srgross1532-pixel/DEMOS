@@ -24,6 +24,7 @@ import {
   renameSong,
   deleteSong,
   moveSong,
+  exportSong,
   type Song,
 } from "../services/songService";
 import { formatSongTitle } from "../utils/formatSongTitle";
@@ -225,6 +226,19 @@ export default function ProjectPage() {
           setOptionsOpen(false);
           setMoveOpen(true);
         }}
+        onExport={async () => {
+  if (!selectedSong) return;
+
+  try {
+    await exportSong(selectedSong);
+
+    setOptionsOpen(false);
+  } catch (err) {
+    console.error(err);
+
+    alert("Failed to export song.");
+  }
+}}
         onDelete={() => {
           setOptionsOpen(false);
           setConfirmOpen(true);

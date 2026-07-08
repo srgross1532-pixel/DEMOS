@@ -6,7 +6,7 @@ import {
   SkipForward,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import type { Variants } from "framer-motion";
+import { useState } from "react";import type { Variants } from "framer-motion";
 
 import { useAudio } from "../../context/AudioContext";
 import { useProjectCover } from "../../hooks/useProjectCover";
@@ -58,7 +58,11 @@ export default function ExpandedPlayer() {
     project,
     coverUrl,
   } = useProjectCover(currentSong?.project_id);
+const [isScrubbing, setIsScrubbing] =
+  useState(false);
 
+const [scrubPercent, setScrubPercent] =
+  useState(0);
   if (!expanded || !currentSong) return null;
 
   const progress =
@@ -66,24 +70,32 @@ export default function ExpandedPlayer() {
 
   return (
     <motion.div
-      initial={{
-        y: "100%",
-        opacity: 0,
-      }}
-      animate={{
-        y: 0,
-        opacity: 1,
-      }}
-      exit={{
-        y: "100%",
-        opacity: 0,
-      }}
-      transition={{
-        type: "spring",
-        damping: 30,
-      }}
-      className="fixed inset-0 z-[100] overflow-hidden bg-[#08090D]"
-    >
+  drag="y"
+  dragConstraints={{ top: 0, bottom: 0 }}
+  dragElastic={0.18}
+  onDragEnd={(_, info) => {
+    if (info.offset.y > 140) {
+      closePlayer();
+    }
+  }}
+  initial={{
+    y: "100%",
+    opacity: 0,
+  }}
+  animate={{
+    y: 0,
+    opacity: 1,
+  }}
+  exit={{
+    y: "100%",
+    opacity: 0,
+  }}
+  transition={{
+    type: "spring",
+    damping: 30,
+  }}
+  className="fixed inset-0 z-[100] overflow-hidden bg-[#08090D]"
+>
       {coverUrl && (
         <motion.img
           initial={{
@@ -120,12 +132,12 @@ export default function ExpandedPlayer() {
           animate="show"
           custom={0.05}
           onClick={closePlayer}
-          className="p-6"
+          className="w-full py-5"
         >
           <ChevronDown
-            className="text-white"
-            size={32}
-          />
+  className="mx-auto text-white"
+  size={34}
+/>
         </motion.button>
 
         <div className="flex flex-1 flex-col items-center px-8">
@@ -181,7 +193,7 @@ export default function ExpandedPlayer() {
             initial="hidden"
             animate="show"
             custom={0.2}
-            className="mt-10 text-center text-5xl font-black tracking-tight text-white"
+            className="mt-10 text-center text-4xl font-black tracking-tight text-white"
           >
             {currentSong.title}
           </motion.h1>
@@ -191,7 +203,7 @@ export default function ExpandedPlayer() {
             initial="hidden"
             animate="show"
             custom={0.28}
-            className="mt-3 text-xl font-medium text-zinc-300"
+            className="mt-2 text-xl font-medium text-zinc-300"
           >
             {project?.name}
           </motion.p>
@@ -203,30 +215,89 @@ export default function ExpandedPlayer() {
             custom={0.36}
             className="mt-12 w-full max-w-xl"
           >
-            <div
-              className="h-2 cursor-pointer overflow-hidden rounded-full bg-white/10"
-              onClick={(e) => {
-                const rect =
-                  e.currentTarget.getBoundingClientRect();
+           <div
+  className="relative h-3 cursor-pointer"
+  onPointerDown={(e) => {
+    setIsScrubbing(true);
 
-                const percent =
-                  (e.clientX - rect.left) /
-                  rect.width;
+    const rect =
+      e.currentTarget.getBoundingClientRect();
 
-                seek(duration * percent);
-              }}
-            >
-              <motion.div
-                animate={{
-                  width: `${progress}%`,
-                }}
-                transition={{
-                  ease: "linear",
-                  duration: 0.1,
-                }}
-                className="h-full rounded-full bg-blue-500 shadow-[0_0_18px_rgba(59,130,246,.8)]"
-              />
-            </div>
+    const percent = Math.min(
+      Math.max(
+        (e.clientX - rect.left) / rect.width,
+        0
+      ),
+      1
+    );
+
+    setScrubPercent(percent);
+  }}
+  onPointerMove={(e) => {
+    if (!isScrubbing) return;
+
+    const rect =
+      e.currentTarget.getBoundingClientRect();
+
+    const percent = Math.min(
+      Math.max(
+        (e.clientX - rect.left) / rect.width,
+        0
+      ),
+      1
+    );
+
+    setScrubPercent(percent);
+  }}
+  onPointerUp={() => {
+    if (!isScrubbing) return;
+
+    seek(duration * scrubPercent);
+
+    setIsScrubbing(false);
+  }}
+  onPointerLeave={() => {
+    if (!isScrubbing) return;
+
+    seek(duration * scrubPercent);
+
+    setIsScrubbing(false);
+  }}
+>
+
+  <div className="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full bg-white/10" />
+
+  <motion.div
+    className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-blue-500 shadow-[0_0_18px_rgba(59,130,246,.8)]"
+    animate={{
+      width: `${
+        (isScrubbing
+          ? scrubPercent
+          : progress / 100) * 100
+      }%`,
+    }}
+    transition={{
+      ease: "linear",
+      duration: 0.05,
+    }}
+  />
+
+  <motion.div
+    animate={{
+      left: `${
+        (isScrubbing
+          ? scrubPercent
+          : progress / 100) * 100
+      }%`,
+      scale: isScrubbing ? 1 : 0,
+    }}
+    transition={{
+      duration: 0.1,
+    }}
+    className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-lg"
+  />
+
+</div> 
 
             <div className="mt-2 flex justify-between text-sm text-zinc-400">
               <span>{formatTime(currentTime)}</span>
@@ -238,7 +309,7 @@ export default function ExpandedPlayer() {
             initial="hidden"
             animate="show"
             custom={0.48}
-            className="mt-20 flex items-center gap-12"
+            className="mt-5 flex items-center gap-12"
           >
             <motion.button
               whileTap={{ scale: 0.88 }}
